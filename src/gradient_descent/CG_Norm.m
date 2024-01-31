@@ -1,17 +1,15 @@
-function [min_val] = CG_Norm(A, x, epsilon, max_eval, alpha_start, ...
-    armijo_m, wolfe_m, tau)
+function [min_val] = CG_Norm(A, x, epsilon, max_eval)
 
     % check validity of input parameters
-    check(A, x, epsilon, max_eval, alpha_start, armijo_m, wolfe_m, tau);
+    check(A, x, epsilon, max_eval);
 
     % define function
     Q = transpose(A) * A;
-    %func = @(x) x'*Q*x;
     func = @(x) -(x' * Q * x) / (x' * x);
+    real_norm = norm(A);
 
     % define the gradient of the function
-    %gradient = @(x,fx) 2*Q*x;
-    gradient = @(x,fx) 2 * (fx * x - Q * x) / (x' * x);
+    gradient = @(x,fx) 2 * ((-fx) * x - Q * x) / (x' * x);
     
     % compute value of function, gradient and norm of gradient in x0
     [func_value, grad_values, norm_gradient] = evaluate(x);
@@ -25,100 +23,45 @@ function [min_val] = CG_Norm(A, x, epsilon, max_eval, alpha_start, ...
     while norm_gradient >= epsilon && func_eval <= max_eval
 
         if init_flag
-            d = - grad_values;
+            d = grad_values;
             init_flag = false;
         else
             beta = (norm_gradient^2) / (norm_grad_pred^2);
-            d = - grad_values + beta * d_pred;
+            d = grad_values + beta * d_pred;
         end
-        
-        % computing efficiently derivative of tomography in 0 with gradient as direction
-        phi_deriv_zero = - (norm_gradient ^ 2);
 
-        % compute stepsize with AW
-        alpha = backtracking_linesearch(func_value, phi_deriv_zero, armijo_m, alpha_start, tau);
-        %alpha = AW_linesearch(func_value, phi_deriv_zero, armijo_m, wolfe_m, alpha_start, tau);
+        % compute stepsize 
+        alpha = compute_step_size(x, d);
 
-        x = x + alpha * d;
+        % move point
+        x = x - alpha * d;
 
         d_pred = d;
         norm_grad_pred = norm_gradient;
 
-        fprintf( 'Iter %d - Func eval: %d\t Func value: %d\t Gradient norm: %d\t Step size: %d\n', iter, func_eval, func_value, norm_gradient, alpha);
+        rel_gap = (real_norm - sqrt(-func_value)) / real_norm;
+
+        fprintf( 'Iter %d - Rel_gap: %d\t Func value: %d\t Gradient norm: %d\t Step size: %d\n', iter, rel_gap, func_value, norm_gradient, alpha);
 
         [func_value, grad_values, norm_gradient] = evaluate(x);
+
+        %pause;
         iter = iter + 1;
         func_eval = func_eval + 1;
     end
     
     min_val = sqrt(-func_value);
     
-
-% Backtraking line search
-function [alpha] = backtracking_linesearch(func_value, phi_der_zero, armijo_m, alpha, tau)
-    phi_alpha = func(x - alpha * grad_values);
-    func_eval = func_eval + 1;
-
-    while phi_alpha > (func_value + armijo_m * alpha * phi_der_zero)
-        phi_alpha = func(x - alpha * grad_values);
-        alpha = tau * alpha;
-        func_eval = func_eval + 1;
-    end
-end
-
-
-function [alpha] = AW_linesearch(func_value, phi_der_zero, armijo_m, wolfe_m, alpha, tau)
-    while func_eval <= max_eval
-        % evaluate tomography
-        phi_alpha = func(x + alpha * d);
-        phi_der_alpha = d' * gradient(x + alpha * d, phi_alpha);
-        func_eval = func_eval + 1;
-
-        % Armijo not satisfied
-        if phi_alpha > (func_value + armijo_m * alpha * phi_der_zero)
-            break;
-        end
-
-        % Wolfe satisfied
-        if phi_der_alpha >= wolfe_m * phi_der_zero
-            %alpha = alpha;
-            return;
-        end
-
-        if phi_der_alpha >= 0
-            break;
-        end
-
-        % Increment alpha
-        alpha = alpha / tau;
-   
-    end
+% Compute step size
+function [alpha] = compute_step_size(x,g)
+    a = (g' * Q * g) * (g' * x) - (g' * Q * x) * (g' * g);
+    b = (x' * Q * x) * (g' * g) - (g' * Q * g) * (x' * x);
+    c = (x' * Q * g) * (x' * x) - (x' * Q * x) * (x' * g);
     
-    min_alpha = 0;
-    max_alpha = alpha;
+    r = roots([a b c]);
 
-    while func_eval <= max_eval
-        alpha = (min_alpha + max_alpha) / 2;
-        
-        % evaluate tomography
-        phi_alpha = func(x + alpha * d);
-        phi_der_alpha = d' * gradient(x + alpha * d, phi_alpha);
-        func_eval = func_eval + 1;
-
-        if phi_alpha <= (func_value + armijo_m * alpha * phi_der_zero)
-            if phi_der_alpha >= wolfe_m * phi_der_zero
-                return
-            end
-
-            min_alpha = alpha;
-        else
-            max_alpha = alpha;
-        end
-
-    end
-
+    alpha =  min(r(r > 0));
 end
-
 
 % Compute value of function, gradient and norm of gradient in x
 function [func_value, grad_values, norm_gradient] = evaluate(x)
@@ -129,9 +72,9 @@ end
 
 
 % Check input parameters
-function [] = check(A,x0,epsilon,max_eval,alpha_start, ...
-    armijo_m,wolfe_m,tau)
-    % Check if f is a function handle
+function [] = check(A,x0,epsilon,max_eval)
+
+    % Check if A is a matrix
     if ~ismatrix(A)
         error('A must be a matrix.');
     end
@@ -151,30 +94,6 @@ function [] = check(A,x0,epsilon,max_eval,alpha_start, ...
         error('Input max_eval must be a positive scalar value.');
     end
     
-    % Check if alpha_start is a positive real value
-    if ~isscalar(alpha_start) || ~isreal(alpha_start) || alpha_start<=0
-        error('Input alpha_start must be a real positive scalar value.');
-    end
-
-    % Check if armijo_m is a real value 
-    if ~isscalar(armijo_m) || ~isreal(armijo_m) || armijo_m<=0 || armijo_m>=1
-        error('Input armijo_m must be a real positive scalar value.');
-    end
-
-    % Check if wolfe_m is a real value 
-    if ~isscalar(wolfe_m) || ~isreal(wolfe_m) || wolfe_m < 0 || wolfe_m>=1
-        error('Input wolfe_m must be a real positive scalar value.');
-    end
-    
-    %check values for armijo_m and wolfe_m
-    if wolfe_m ~= 0 && armijo_m >= wolfe_m
-        error('armijo_m and wolfe_m not valid')
-    end
-    
-    % Check if tau is a real value 
-    if ~isscalar(tau) || ~isreal(tau) || tau<=0 || tau>=1
-        error('Input tau must be a real positive scalar value.');
-    end
 end
 
 end

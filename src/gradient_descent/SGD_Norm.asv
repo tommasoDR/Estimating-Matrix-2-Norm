@@ -32,7 +32,7 @@ function [min_val] = SGD_Norm(A, x, epsilon, max_eval)
 
         fprintf( 'Iter %d - Rel_gap: %d\t Func value: %d\t Gradient norm: %d\t Step size: %d\n', iter, rel_gap, func_value, norm_gradient, alpha);
         
-        %pause;
+        pause;
         func_eval = func_eval + 1;
         iter = iter + 1;
     end
@@ -55,7 +55,14 @@ function [alpha] = compute_step_size(x,g)
     
     r = roots([a b c]);
     
-    alpha =  min(r(r > 0));   
+    if r(1) < 0
+        alpha = r(2);
+    elseif r(2) < 0 
+        alpha = r(1);
+    else
+        alpha = min(r);
+    end
+    
 end
 
 % Check input parameters
