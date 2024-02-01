@@ -7,51 +7,73 @@ function [min_val] = SGD_Norm(A, x, epsilon, max_eval)
     
     % define function
     Q = transpose(A) * A;
-    func = @(x) -(x' * Q * x) / (x' * x);
+    func = @(xTQx, xTx) -xTQx / xTx;
+    
+    % Compute norm of A with MATLAB library to have relative gap
     real_norm = norm(A);
 
     % define the gradient of the function
-    gradient = @(x,fx) 2 * ((-fx) * x - Q * x) / (x' * x);
-    
-    % compute value of function, gradient and norm of gradient in x0
-    [func_value, grad_values, norm_gradient] = evaluate(x);
+    gradient = @(x, fx, Qx, xTx) 2 * ((-fx) * x - Qx) / xTx;
 
-    % Initialize stats variable
-    func_eval = 1;
-    iter = 1;
+    % Initialize iterations variable
+    iter = 0;
+    alpha = 0;
 
-    while norm_gradient > epsilon && func_eval <= max_eval
+    while iter < max_eval
         
-        alpha = compute_step_size(x, grad_values);
+        % compute value of function, gradient and norm of gradient in x
+        [Qx, xTQx, xTx] = compute_terms(x, Q);
+        [norm_estimate, grad_values, norm_gradient] = evaluate(x, Qx, xTQx, xTx);
 
+        % compute relative gap
+        rel_gap = (real_norm - norm_estimate) / real_norm;
+
+        % print stats of current iteration
+        fprintf( ['Iter %d - Rel_gap: %d\t Gradient norm: %d\t' ...
+            'Step size: %d\n'], iter, rel_gap, norm_gradient, alpha);
+
+        if norm_gradient < epsilon
+            break;
+        end
+
+        % compute step size with exact line search
+        alpha = compute_step_size(x, xTQx, xTx, grad_values);
+
+        % move x
         x = x - alpha * grad_values;
-
-        [func_value, grad_values, norm_gradient] = evaluate(x);
-
-        rel_gap = (real_norm - sqrt(-func_value)) / real_norm;
-
-        fprintf( 'Iter %d - Rel_gap: %d\t Func value: %d\t Gradient norm: %d\t Step size: %d\n', iter, rel_gap, func_value, norm_gradient, alpha);
-        
+     
         %pause;
-        func_eval = func_eval + 1;
         iter = iter + 1;
     end
     
-    min_val = sqrt(-func_value);
+    min_val = sqrt(norm_estimate);
 
+% Compute the terms used in the succesive calculations
+function [Qx, xTQx, xTx] = compute_terms(x,Q)
+    Qx = Q * x;
+    xTQx = x' * Qx;
+    xTx = x' * x;
+end
 
 % Compute value of function, gradient and norm of gradient in x
-function [func_value, grad_values, norm_gradient] = evaluate(x)
-    func_value = func(x);
-    grad_values = gradient(x, func_value);
+function [norm_estimate, grad_values, norm_gradient] = evaluate(x, Qx, xTQx, xTx)
+    func_value = func(xTQx,xTx);
+    norm_estimate = sqrt(-func_value);
+    grad_values = gradient(x, func_value, Qx, xTx);
     norm_gradient = norm(grad_values);
 end
 
 % Compute step size
-function [alpha] = compute_step_size(x,g)
-    a = (g' * Q * g) * (g' * x) - (g' * Q * x) * (g' * g);
-    b = (x' * Q * x) * (g' * g) - (g' * Q * g) * (x' * x);
-    c = (x' * Q * g) * (x' * x) - (x' * Q * x) * (x' * g);
+function [alpha] = compute_step_size(x, xTQx, xTx, g)
+    gTQg = (g' * Q * g);
+    xTQg = (x' * Q * g);
+
+    gTg = (g' * g);
+    xTg = (x' * g);
+
+    a = gTQg * xTg - xTQg * gTg;
+    b = xTQx * gTg - gTQg * xTx;
+    c = xTQg * xTx - xTQx * xTg;
     
     r = roots([a b c]);
     
@@ -60,7 +82,6 @@ end
 
 % Check input parameters
 function [] = check(A,x0,epsilon,max_eval)
-
     % Check if A is a matrix
     if ~ismatrix(A)
         error('A must be a matrix.');
@@ -80,7 +101,6 @@ function [] = check(A,x0,epsilon,max_eval)
     if  ~isreal(max_eval) || ~mod(max_eval,1) == 0 || max_eval<=0
         error('Input max_eval must be a positive scalar value.');
     end
-    
 end
 
 end
