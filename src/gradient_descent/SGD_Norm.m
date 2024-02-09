@@ -1,7 +1,11 @@
 % implementation of steepest gradient descent algorithm 
 
-function [min_val] = SGD_Norm(A, x, epsilon, max_eval)
-   
+function [result, rel_gap, iter] = SGD_Norm(A, x, epsilon, max_eval)
+    
+    % fixed settings variable
+    pause_iter = false;
+    verbose = true;
+
     % check validity of input parameters
     check(A, x, epsilon, max_eval);
     
@@ -15,9 +19,10 @@ function [min_val] = SGD_Norm(A, x, epsilon, max_eval)
     % define the gradient of the function
     gradient = @(x, fx, Qx, xTx) 2 * ((-fx) * x - Qx) / xTx;
 
-    % Initialize iterations variable
+    % Initialize variable
     iter = 0;
     alpha = 0;
+    exit_status = "max_iter";
 
     while iter < max_eval
         
@@ -29,10 +34,13 @@ function [min_val] = SGD_Norm(A, x, epsilon, max_eval)
         rel_gap = (real_norm - norm_estimate) / real_norm;
 
         % print stats of current iteration
-        fprintf( ['Iter %d - Rel_gap: %d\t Gradient norm: %d\t' ...
-            'Step size: %d\n'], iter, rel_gap, norm_gradient, alpha);
+        if verbose
+            fprintf( ['Iter %d - Rel_gap: %d\t Gradient norm: %d\t' ...
+                'Step size: %d\n'], iter, rel_gap, norm_gradient, alpha);
+        end
 
         if norm_gradient < epsilon
+            exit_status = "optimal";
             break;
         end
 
@@ -42,11 +50,24 @@ function [min_val] = SGD_Norm(A, x, epsilon, max_eval)
         % move x
         x = x - alpha * grad_values;
      
-        %pause;
+        if pause_iter 
+            pause;
+        end
+
         iter = iter + 1;
+        
     end
     
-    min_val = sqrt(norm_estimate);
+    if verbose & exit_status == "max_iter" 
+        fprintf("\nThe maximum number of iterations has been reached. " + ...
+            "Solution might not be accurate.\n")
+    elseif verbose & exit_status == "optimal"
+        fprintf("\nThe stopping criterion has been reached.\n")
+    elseif verbose
+        fprintf("\nSomething gone wrong...\n")
+    end
+
+    result = norm_estimate;
 
 % Compute the terms used in the succesive calculations
 function [Qx, xTQx, xTx] = compute_terms(x,Q)
@@ -77,11 +98,12 @@ function [alpha] = compute_step_size(x, xTQx, xTx, g)
     
     r = roots([a b c]);
     
-    alpha =  min(r(r > 0));   
+    alpha =  min(r(r >= 0));  
+
 end
 
 % Check input parameters
-function [] = check(A,x0,epsilon,max_eval)
+function [] = check(A, x0, epsilon, max_eval)
     % Check if A is a matrix
     if ~ismatrix(A)
         error('A must be a matrix.');
