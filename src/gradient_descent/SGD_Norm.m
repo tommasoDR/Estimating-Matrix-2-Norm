@@ -1,10 +1,17 @@
 % implementation of steepest gradient descent algorithm 
 
-function [result, rel_gap, iter] = SGD_Norm(A, x, epsilon, max_eval)
+function [result, rel_gaps, vect_ng, time, iter] = SGD_Norm(A, x, epsilon, max_eval)
     
+    % measure time for experiment
+    tic;
+
     % fixed settings variable
     pause_iter = false;
     verbose = true;
+
+    % initialize support variable
+    rel_gaps = zeros(max_eval, 1);
+    vect_ng = zeros(max_eval, 1);
 
     % check validity of input parameters
     check(A, x, epsilon, max_eval);
@@ -29,9 +36,11 @@ function [result, rel_gap, iter] = SGD_Norm(A, x, epsilon, max_eval)
         % compute value of function, gradient and norm of gradient in x
         [Qx, xTQx, xTx] = compute_terms(x, Q);
         [norm_estimate, grad_values, norm_gradient] = evaluate(x, Qx, xTQx, xTx);
+        vect_ng(iter+1) = norm_gradient;
 
         % compute relative gap
         rel_gap = (real_norm - norm_estimate) / real_norm;
+        rel_gaps(iter+1) = abs(rel_gap);
 
         % print stats of current iteration
         if verbose
@@ -66,8 +75,13 @@ function [result, rel_gap, iter] = SGD_Norm(A, x, epsilon, max_eval)
     elseif verbose
         fprintf("\nSomething gone wrong...\n")
     end
-
+    
+    % results
+    time = toc;
+    rel_gaps = rel_gaps(1:iter+1);
+    vect_ng = vect_ng(1:iter+1);
     result = norm_estimate;
+    
 
 % Compute the terms used in the succesive calculations
 function [Qx, xTQx, xTx] = compute_terms(x,Q)
