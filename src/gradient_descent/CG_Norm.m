@@ -5,7 +5,7 @@ function [result, rel_gaps, vect_ng, time, iter] = CG_Norm(A, x, epsilon, max_ev
 
     % fixed settings variable
     pause_iter = false;
-    verbose = true;
+    verbose = false;
 
     % initialize support variable
     rel_gaps = zeros(max_eval, 1);
@@ -50,6 +50,7 @@ function [result, rel_gaps, vect_ng, time, iter] = CG_Norm(A, x, epsilon, max_ev
         % stopping criterion
         if norm_gradient < epsilon
             exit_status = "optimal";
+            iter = iter + 1;
             break;
         end
 
@@ -94,10 +95,15 @@ function [result, rel_gaps, vect_ng, time, iter] = CG_Norm(A, x, epsilon, max_ev
     end
     
     % results
-    time = toc;
-    rel_gaps = rel_gaps(1:iter+1);
-    vect_ng = vect_ng(1:iter+1);
+    if exit_status == "max_iter" 
+        iter = max_eval - 1;
+    end
     result = norm_estimate;
+    time = toc;
+
+    rel_gaps = rel_gaps(1:iter);
+    vect_ng = vect_ng(1:iter);
+    
 
 
 % Compute the terms used in the succesive calculations

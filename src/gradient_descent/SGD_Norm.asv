@@ -7,7 +7,7 @@ function [result, rel_gaps, vect_ng, time, iter] = SGD_Norm(A, x, epsilon, max_e
 
     % fixed settings variable
     pause_iter = false;
-    verbose = false;
+    verbose = true;
 
     % initialize support variable
     rel_gaps = zeros(max_eval, 1);

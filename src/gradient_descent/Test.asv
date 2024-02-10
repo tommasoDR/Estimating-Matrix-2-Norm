@@ -1,10 +1,10 @@
 % dimension
 m = 1000;
-n = 1000;
+n = 100;
 
 % test parameters
-test_iter = 3;
-epsilon = 1e-9;
+test_iter = 100;
+epsilon = 1e-7;
 max_eval = 5000;
 
 % init of support variable
@@ -28,11 +28,9 @@ times_HS = zeros(test_iter,1);
 
 while i <= test_iter
     % random matrix vector
-    A = sprand(m,n,1,1e-5);
-    A = full(A);
-    A(A~=0) = 10 * nonzeros(A);
+    %A = sprand(m,n,1,0.5); A(A~=0) = 1000*nonzeros(A); A = full(A);
 
-    %A = rand(m,n) * 20 - 10;
+    A = rand(m,n) * 20 - 10;
     x = rand(n,1) * 6 - 3;
    
     % test
@@ -74,31 +72,33 @@ while i <= test_iter
 end
 
 % SGD
-[mean_iter_SGD, iters_std_SGD, mean_gap_SGD, gaps_std_SGD, ...
-    mean_time_SGD, times_std_SGD] = compute_stats(iters_SGD, gaps_SGD, times_SGD);
+[mean_iter_SGD, max_iters_SGD, mean_gap_SGD, gaps_std_SGD, ...
+    max_gap_SGD, mean_time_SGD, times_std_SGD, max_time_SGD] = compute_stats(iters_SGD, gaps_SGD, times_SGD);
 
 % FR
-[mean_iter_FR, iters_std_FR, mean_gap_FR, gaps_std_FR, ...
-    mean_time_FR, times_std_FR] = compute_stats(iters_FR, gaps_FR, times_FR);
+[mean_iter_FR, max_iters_FR, mean_gap_FR, gaps_std_FR, ...
+    max_gap_FR, mean_time_FR, times_std_FR, max_time_FR] = compute_stats(iters_FR, gaps_FR, times_FR);
 
 % PR
-[mean_iter_PR, iters_std_PR, mean_gap_PR, gaps_std_PR, ...
-    mean_time_PR, times_std_PR] = compute_stats(iters_PR, gaps_PR, times_PR);
+[mean_iter_PR, max_iters_PR, mean_gap_PR, gaps_std_PR, ...
+    max_gap_PR, mean_time_PR, times_std_PR, max_time_PR] = compute_stats(iters_PR, gaps_PR, times_PR);
 
 % HS
-[mean_iter_HS, iters_std_HS, mean_gap_HS, gaps_std_HS, ...
-    mean_time_HS, times_std_HS] = compute_stats(iters_HS, gaps_HS, times_HS);
+[mean_iter_HS, max_iters_HS, mean_gap_HS, gaps_std_HS, ...
+    max_gap_HS, mean_time_HS, times_std_HS, max_time_HS] = compute_stats(iters_HS, gaps_HS, times_HS);
 
 
 
-function [mean_iter, iters_std, mean_gap, gaps_std,...
-                mean_time, time_std] = compute_stats(iters, gaps, times)
+function [mean_iter, max_iter, mean_gap, gaps_std, max_gap,...
+                mean_time, time_std, max_time] = compute_stats(iters, gaps, times)
     mean_iter = mean(iters);
-    iters_std = std(iters);
+    max_iter = max(iters);
 
     mean_gap = mean(gaps);
-    gaps_std = std(gaps);
+    gaps_variance = var(gaps);
+    max_gap = max(gaps);
 
     mean_time = mean(times);
-    time_std = std(times);
+    time_variance = var(times);
+    max_time = max(times);
 end
