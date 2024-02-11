@@ -14,21 +14,19 @@ function [] = Plot(vector1, vector2, vector3, plt_title, filename)
     iterations2 = 1:num_iterations2;
     iterations3 = 1:num_iterations3;
      
-    % Plotting
-    semilogy(iterations1, vector1, iterations2, vector2);  
-    
+    % Plotting  
     if ~isempty(vector3)
         semilogy(iterations1, vector1, "r", iterations2, vector2, "g", iterations3, vector3, "b"); 
     else
-        semilogy(iterations1, vector1, iterations2, vector2);
+        semilogy(iterations1, vector1, "r", iterations2, vector2, "b");
     end
    
-    xlabel('Iteration');
-    ylabel('Relative Gap Error');
+    xlabel('Iterations');
+    ylabel('Gradient norm');
     title(plt_title);
     
     if isempty(vector3)
-        legend("SGD", "CG");
+        legend("SGD", "CG-FR");
     else
         legend("FR", "PR", "HS");
     end

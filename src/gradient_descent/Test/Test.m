@@ -3,7 +3,7 @@ m = 1000;
 n = 1000;
 
 % test parameters
-test_iter = 3;
+test_iter = 1;
 epsilon = 1e-9;
 max_eval = 5000;
 
@@ -28,11 +28,11 @@ times_HS = zeros(test_iter,1);
 
 while i <= test_iter
     % random matrix vector
-    A = sprand(m,n,1,1e-5);
-    A = full(A);
-    A(A~=0) = 10 * nonzeros(A);
+    %A = sprand(m,n,1,1e-5);
+    %A = full(A);
+    %A(A~=0) = 10 * nonzeros(A);
 
-    %A = rand(m,n) * 20 - 10;
+    A = rand(m,n) * 20 - 10;
     x = rand(n,1) * 6 - 3;
    
     % test
@@ -43,21 +43,21 @@ while i <= test_iter
     
     % crunching results
     if gap_SGD(iter_SGD) == 0
-        gap_SGD(iter_SGD) = 10e-17;
+        gap_SGD(iter_SGD) = 10e-16;
     end
     gaps_SGD(i) = floor(log10(abs(gap_SGD(iter_SGD))));
     times_SGD(i) = time_SGD;
     iters_SGD(i) = iter_SGD;
 
     if gap_FR(iter_FR) == 0
-        gap_FR(iter_FR) = 1e-17;
+        gap_FR(iter_FR) = 1e-16;
     end
     gaps_FR(i) = floor(log10(abs(gap_FR(iter_FR))));
     times_FR(i) = time_FR;
     iters_FR(i) = iter_FR;
 
     if gap_PR(iter_PR) == 0
-        gap_PR(iter_PR) = 1e-17;
+        gap_PR(iter_PR) = 1e-16;
     end
     gaps_PR(i) = floor(log10(abs(gap_PR(iter_PR))));
     times_PR(i) = time_PR;
