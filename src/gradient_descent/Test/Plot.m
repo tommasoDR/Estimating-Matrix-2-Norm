@@ -1,3 +1,16 @@
+% Function that plots two or three vectors of relative gaps or gradient
+% norm values
+%
+% Input
+% - vector1: the first vector of relative gaps or gradient
+%               norm values to be plotted
+% - vector2: the second vector of relative gaps or gradient
+%               norm values to be plotted
+% - vector3: the third vector of relative gaps or gradient
+%               norm values to be plotted
+% - plt_title: the name of the plot
+% - filename: the name of the png file saved in current directory
+
 function [] = Plot(vector1, vector2, vector3, plt_title, filename)
 
     vector1(vector1==0) = vector1(vector1==0) + 1e-16;
@@ -22,7 +35,8 @@ function [] = Plot(vector1, vector2, vector3, plt_title, filename)
     end
    
     xlabel('Iterations');
-    ylabel('Gradient norm');
+    ylabel('Relative gap');
+    %ylabel('Gradient norm');
     title(plt_title);
     
     if isempty(vector3)

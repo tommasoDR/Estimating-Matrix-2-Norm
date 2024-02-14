@@ -1,3 +1,5 @@
+% Script that plots the function in three dimension
+
 A = rand(3,2) * 4;
 Q = transpose(A) * A;
 

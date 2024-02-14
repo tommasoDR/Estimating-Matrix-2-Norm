@@ -1,13 +1,17 @@
-% dimension
+% Script that executed a convergence test with the specified parameters
+
+% Matrix A dimensions
 m = 1000;
-n = 1000;
+n = 100;
 
-% test parameters
-test_iter = 1;
-epsilon = 1e-9;
+% Test parameters
+test_iter = 250;
+epsilon = 5e-5;
 max_eval = 5000;
+conditioning = false;
+condNumb = 1e5;
 
-% init of support variable
+% Initialization of support data structures
 i = 1;
 gaps_SGD = zeros(test_iter,1);
 iters_SGD = zeros(test_iter,1);
@@ -27,37 +31,49 @@ times_HS = zeros(test_iter,1);
 
 
 while i <= test_iter
-    % random matrix vector
-    %A = sprand(m,n,1,1e-5);
-    %A = full(A);
-    %A(A~=0) = 10 * nonzeros(A);
+    fprintf("Test num. %d\n",i);
 
-    A = rand(m,n) * 20 - 10;
+    % Random matrix generation
+    if conditioning
+        % Ill-conditioned
+        A = generateMatrix(m,n,condNumb);
+    else
+        % Well-conditioned
+        while(true)
+            A=rand(m,n) * 20 -10;
+            if cond(A) < 6
+                break;
+            end
+        end
+    end
+    
+    % Random starting point generation
     x = rand(n,1) * 6 - 3;
    
-    % test
-    [~, gap_SGD, ng_SGD, time_SGD, iter_SGD] = SGD_Norm(A, x, epsilon, max_eval);
-    [~, gap_FR, ng_FR, time_FR, iter_FR] = CG_Norm(A, x, epsilon, max_eval, 1);
-    [~, gap_PR, ng_PR, time_PR, iter_PR] = CG_Norm(A, x, epsilon, max_eval, 2);
-    [~, gap_HS, ng_HS, time_HS, iter_HS] = CG_Norm(A, x, epsilon, max_eval, 3);
+    % Test execution
+    [~, gap_SGD, gn_SGD, time_SGD, iter_SGD] = SGD_Norm(A, x, epsilon, max_eval);
+    [~, gap_FR, gn_FR, time_FR, iter_FR] = CG_Norm(A, x, epsilon, max_eval, 1);
+    [~, gap_PR, gn_PR, time_PR, iter_PR] = CG_Norm(A, x, epsilon, max_eval, 2);
+    [~, gap_HS, gn_HS, time_HS, iter_HS] = CG_Norm(A, x, epsilon, max_eval, 3);
     
-    % crunching results
+    % Crunching results
     if gap_SGD(iter_SGD) == 0
-        gap_SGD(iter_SGD) = 10e-16;
+        gap_SGD(iter_SGD) = 10e-17;
     end
-    gaps_SGD(i) = floor(log10(abs(gap_SGD(iter_SGD))));
+    % Extracting order of magnitude of relative gap
+    gaps_SGD(i) = floor(log10(abs(gap_SGD(iter_SGD))));  
     times_SGD(i) = time_SGD;
     iters_SGD(i) = iter_SGD;
 
     if gap_FR(iter_FR) == 0
-        gap_FR(iter_FR) = 1e-16;
+        gap_FR(iter_FR) = 1e-17;
     end
     gaps_FR(i) = floor(log10(abs(gap_FR(iter_FR))));
     times_FR(i) = time_FR;
     iters_FR(i) = iter_FR;
 
     if gap_PR(iter_PR) == 0
-        gap_PR(iter_PR) = 1e-16;
+        gap_PR(iter_PR) = 1e-17;
     end
     gaps_PR(i) = floor(log10(abs(gap_PR(iter_PR))));
     times_PR(i) = time_PR;
@@ -70,7 +86,7 @@ while i <= test_iter
     times_HS(i) = time_HS;
     iters_HS(i) = iter_HS;
 
-    i = i + 1
+    i = i + 1;
 end
 
 % SGD
@@ -90,7 +106,7 @@ end
     mean_time_HS, times_std_HS] = compute_stats(iters_HS, gaps_HS, times_HS);
 
 
-
+% Computes the statistics of an algorithm on a test
 function [mean_iter, iters_std, mean_gap, gaps_std,...
                 mean_time, time_std] = compute_stats(iters, gaps, times)
     mean_iter = mean(iters);
