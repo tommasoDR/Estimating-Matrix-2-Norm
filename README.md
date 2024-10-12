@@ -1,4 +1,4 @@
-# Computational Mathematics project_23-24
+# Computational Mathematics 2023-2024 project 
 
 (P) is the problem of estimating the 2 norm of a matrix for a (possibly rectangular) matrix A ∈ R m×n, using its definition as an (unconstrained) maximum problem.
 
